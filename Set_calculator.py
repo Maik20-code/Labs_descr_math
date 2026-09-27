@@ -1,303 +1,499 @@
-from random import randint
+from random import *
+
+# ДАННЫЕ
 
 A = set()
 B = set()
 C = set()
-U = set(range(-30,31))
-MAX_SIZE=10
+U = set(range(-30, 31))          # универсальное множество
+SETS = {"a": A, "b": B, "c": C}  # доступ к множествам по имени (типо словаря)
 
-def Format_list(l):
-    if len(l) == 0:
-        return {0}
-    return l
 
-def Action():
-    m = input("Выберите действие: ").lower()
-    match m:
-        case "print": Print()
-        case "rand": Rand()
-        case "end":
-            print("Завершение программы")
-            return
-        case "add": Add()
-        case "rand_all": Rand_all()
-        case "print_full": Print_full()
-        case "rand_full": Rand_full()
-        case "del": Del()
-        case "clear": Clear()
-        case "clear_all": Clear_all()
-        case "opers":  Operations()
-        case _:
-            print("Нет такого действия!")
-            Action()
-    print("====================================")
+# ОПЕРАЦИИ НАД МНОЖЕСТВАМИ (вручную)
 
-def Add():
-    m = input("В какое множество хотите добавить число? ").lower()
-    match m:
-        case "a": lst = A
-        case "b": lst = B
-        case "c": lst = C
-        case _:
-            print("Нет такого множества!")
-            return Action()
+def Peresech(s1, s2):
+    res = set()
+    for x in s1:
+        if x in s2:
+            res.add(x)
+    return res
 
-    if len(lst) >= MAX_SIZE:
-        print("Множество", m.upper(), "уже заполнено!")
-        return Action()
 
-    c = int(input("Введите желаемое кол-во чисел: "))
-    space_left = MAX_SIZE - len(lst)
-    if c > space_left:
-        print("Возможно добавить только", space_left, "чисел")
-        c = space_left
+def Objedinenie(s1, s2):
+    res = set()
+    for x in s1:
+        res.add(x)
+    for x in s2:
+        if x not in res:
+            res.add(x)
+    return res
 
-    for i in range(c):
-        n = int(input(f"Введите {i+1} число: "))
-        if not (-30 <= n <= 30):
-            print("Число не принадлежит U")
+
+def Raznost(s1, s2):
+    res = set()
+    for x in s1:
+        if x not in s2:
+            res.add(x)
+    return res
+
+
+def SimmRaznost(s1, s2):
+    res = set()
+    for x in s1:
+        if x not in s2:
+            res.add(x)
+    for x in s2:
+        if x not in s1:
+            res.add(x)
+    return res
+
+
+def Dopolnenie(s):
+    return Raznost(U, s)
+
+
+# ФОРМАТИРОВАНИЕ
+
+def Format(s):
+    if len(s) == 0:
+        return "∅"
+    return "{" + ", ".join(str(x) for x in sorted(s)) + "}"
+
+
+# ТОКЕНИЗАЦИЯ
+
+SYMBOLS = {
+    "∪": "+",
+    "|": "+",
+    "∩": "&",
+    "*": "&",
+    "△": "^",
+    "¬": "~",
+    "!": "~",
+    "/": "\\",
+}
+
+
+def Tokenize(expr):
+    tokens = []
+    for ch in expr:
+        if ch.isspace():
             continue
-        lst.add(n)
-        print("Число", n, "добавлено в множество", m)
+        if ch in "ABCabc":
+            tokens.append(ch.upper())
+        elif ch in "+\\&^~()":
+            tokens.append(ch)
+        elif ch in SYMBOLS:
+            tokens.append(SYMBOLS[ch])
+        else:
+            raise SyntaxError(f"Недопустимый символ: '{ch}'")
+    return tokens
 
-    Action()
 
-def Rand():
-    n = randint(-30, 30)
-    m = input("Выберите множество: ").lower()
-    match m:
-        case "a":
-            if len(A) < MAX_SIZE:
-                A.add(n)
-                print("число", n, "было добавлено в множество", m)
-            else:
-                print("Множество A заполнено!")
-        case "b":
-            if len(B) < MAX_SIZE:
-                B.add(n)
-                print("число", n, "было добавлено в множество", m)
-            else:
-                print("Множество B заполнено!")
-        case "c":
-            if len(C) < MAX_SIZE:
-                C.add(n)
-                print("число", n, "было добавлено в множество", m)
-            else:
-                print("Множество C заполнено!")
-        case _:
-            print("Нет такого множества")
-    Action()
+# ПАРСЕР (рекурсивный спуск)
+#  Грамматика по приоритетам (от низкого к высокому):
+#    expr -> term (("+" | "\" | "^") term)*
+#    term -> factor ("&" factor)*
+#    factor -> "~" factor | atom
+#    atom -> "A" | "B" | "C" | "(" expr ")"
 
-def Rand_full():
-    space_leftA = MAX_SIZE - len(A)
-    space_leftB = MAX_SIZE - len(B)
-    space_leftC = MAX_SIZE - len(C)
-    if space_leftA > 0:
-        for i in range(space_leftA):
-            A.add(randint(-30, 30))
-    if space_leftB > 0:
-        for i in range(space_leftB):
-            B.add(randint(-30, 30))
-    if space_leftC > 0:
-        for i in range(space_leftC):
-            C.add(randint(-30, 30))
-    print("Множество А:", A)
-    print("Множество B:", B)
-    print("Множество C:", C)
-    Action()
+def Peek(state):
+    pos = state["pos"]
+    tok = state["tokens"]
+    return tok[pos] if pos < len(tok) else None
 
-def Rand_all():
-    m = input("Какое множество хотите заполнить? ").lower()
-    match m:
-        case "a":
-            space_left = MAX_SIZE - len(A)
-            if space_left > 0:
-                for i in range(space_left):
-                    A.add(randint(-30, 30))
-                print("Множество А:", A)
-            else:
-                print("Множество A уже заполнено!")
-        case "b":
-            space_left = MAX_SIZE - len(B)
-            if space_left > 0:
-                for i in range(space_left):
-                    B.add(randint(-30, 30))
-                print("Множество B:", B)
-            else:
-                print("Множество B уже заполнено!")
-        case "c":
-            space_left = MAX_SIZE - len(C)
-            if space_left > 0:
-                for i in range(space_left):
-                    C.add(randint(-30, 30))
-                print("Множество C:", C)
-            else:
-                print("Множество C уже заполнено!")
-        case _:
-            print("Нет такого множества!")
-    Action()
+def Consume(state):
+    t = state["tokens"][state["pos"]]
+    state["pos"] += 1
+    return t
 
-def Print():
-    m = input("Какое множество вывести на экран? ").lower()
-    match m:
-        case "a": print("множество A:", sorted(Format_list(A)))
-        case "b": print("множество B:", sorted(Format_list(B)))
-        case "c": print("множество C:", sorted(Format_list(C)))
-        case _: print("Нет такого множества")
-    Action()
+def Record(state, op, left, right, res):
+    if not state["trace"]:
+        return
+    state["step"] += 1
+    l = Format(left) if isinstance(left, set) else left
+    r = Format(right) if isinstance(right, set) else right
+    state["log"].append(
+        f"  шаг {state['step']}: {l} {op} {r} → {Format(res)}"
+    )
 
-def Print_full():
-    print("Множество А:", Format_list(A))
-    print("Множество B:", Format_list(B))
-    print("Множество C:", Format_list(C))
-    Action()
+def ParseAtom(state):
+    tok = Peek(state)
+    if tok is None:
+        raise SyntaxError("Неожиданный конец выражения")
+    if tok in ("A", "B", "C"):
+        Consume(state)
+        return SETS[tok.lower()]
+    if tok == "(":
+        Consume(state)
+        inner = ParseExpr(state)
+        if Peek(state) != ")":
+            raise SyntaxError("Не закрыта скобка")
+        Consume(state)
+        return inner
+    raise SyntaxError(f"Неожиданный токен: '{tok}'")
 
-def Clear():
-    m = input("Какое множество хотите очистить? ").lower()
-    match m:
-        case "a":
-            A.clear()
-            print("Множество A очищенно")
-        case "b":
-            B.clear()
-            print("Множество B очищенно")
-        case "c":
-            C.clear()
-            print("Множество C очищенно")
-        case _:
-            print("Нет такого множества")
-    Action()
+def ParseFactor(state):
+    if Peek(state) == "~":
+        Consume(state)
+        operand = ParseFactor(state)
+        res = Dopolnenie(operand)
+        Record(state, "~", operand, "U", res)
+        return res
+    return ParseAtom(state)
 
-def Clear_all():
-    A.clear()
-    B.clear()
-    C.clear()
-    print("Все множества очищенны")
-    Print_full()
+def ParseTerm(state):
+    left = ParseFactor(state)
+    while Peek(state) == "&":
+        Consume(state)
+        right = ParseFactor(state)
+        res = Peresech(left, right)
+        Record(state, "&", left, right, res)
+        left = res
+    return left
+
+def ParseExpr(state):
+    left = ParseTerm(state)
+    while Peek(state) in ("+", "\\", "^"):
+        op = Consume(state)
+        right = ParseTerm(state)
+        if op == "+":
+            res = Objedinenie(left, right)
+            Record(state, "+", left, right, res)
+        elif op == "\\":
+            res = Raznost(left, right)
+            Record(state, "\\", left, right, res)
+        else:
+            res = SimmRaznost(left, right)
+            Record(state, "^", left, right, res)
+        left = res
+    return left
+
+def Evaluate(expr, trace=False):
+    tokens = Tokenize(expr)
+    if not tokens:
+        raise SyntaxError("Пустое выражение")
+
+    state = {
+        "tokens": tokens,
+        "pos": 0,
+        "trace": trace,
+        "step": 0,
+        "log": [],
+    }
+
+    res = ParseExpr(state)
+
+    if state["pos"] != len(tokens):
+        raise SyntaxError(
+            f"Лишние символы после выражения: '{tokens[state['pos']]}'"
+        )
+    return res, state["log"]
+
+
+# УСЛОВИЯ ДЛЯ ЧИСЕЛ
+
+def Conditions():
+    print("Выберите условия (можно несколько подряд):")
+    print("  1 - Отрицательные (x < 0)")
+    print("  2 - Положительные (x > 0)")
+    print("  3 - Кратные n")
+    print("  4 - Чётные")
+    print("  5 - Нечётные")
+    print("  6 - В диапазоне [lo, hi]")
+    print("  7 - Любые (по умолчанию)")
+
+    raw = input("Ваш выбор: ").strip()
+    if not raw:
+        raw = "7"
+
+    checks = []
+    descr = []
+
+    for ch in raw:
+        if ch == "1":
+            checks.append(lambda x: x < 0)
+            descr.append("отрицательные")
+        elif ch == "2":
+            checks.append(lambda x: x > 0)
+            descr.append("положительные")
+        elif ch == "3":
+            try:
+                n = int(input("  n = "))
+            except ValueError:
+                print("  Некорректно, пропускаем.")
+                continue
+            if n == 0:
+                print("  n не может быть 0, пропускаем.")
+                continue
+            checks.append(lambda x, n=n: x % n == 0)
+            descr.append(f"кратные {n}")
+        elif ch == "4":
+            checks.append(lambda x: x % 2 == 0)
+            descr.append("чётные")
+        elif ch == "5":
+            checks.append(lambda x: x % 2 != 0)
+            descr.append("нечётные")
+        elif ch == "6":
+            try:
+                lo = int(input("  нижняя граница: "))
+                hi = int(input("  верхняя граница: "))
+            except ValueError:
+                print("  Некорректно, пропускаем.")
+                continue
+            if lo > hi:
+                lo, hi = hi, lo
+            checks.append(lambda x, lo=lo, hi=hi: lo <= x <= hi)
+            descr.append(f"в [{lo}, {hi}]")
+        elif ch == "7":
+            continue
+        else:
+            print(f"  Пропускаем неизвестный пункт '{ch}'.")
+
+    if not checks:
+        checks = [lambda x: True]
+        descr = ["любые"]
+
+    print(f"Условия: {', '.join(descr)}.")
+    return checks
+
+def Check(x, checks):
+    for check in checks:
+        if not check(x):
+            return False
+    return True
+
+
+# ВЫБОР МНОЖЕСТВА
+
+def ChooseSet():
+    m = input("Выберите множество (a/b/c): ").strip().lower()
+    if m not in SETS:
+        print("Нет такого множества!")
+        return None
+    return m
+
+
+# МЕНЮ 1: ДЕЙСТВИЯ НАД МНОЖЕСТВАМИ
+
+def AddRand():
+    m = ChooseSet()
+    if m is None:
+        return
+    target = SETS[m]
+
+    checks = Conditions()
+    valid = [n for n in U if Check(n, checks)]
+    if not valid:
+        print("Под условия не подходит ни одно число из U.")
+        return
+
+    free = [n for n in valid if n not in target]
+    if not free:
+        print("Все подходящие числа уже есть в множестве.")
+        return
+
+    try:
+        count = int(input(f"Сколько добавить? (доступно {len(free)}): "))
+    except ValueError:
+        print("Некорректно.")
+        return
+
+    if count <= 0:
+        print("Количество должно быть положительным.")
+        return
+
+    count = min(count, len(free))
+    for n in sample(free, count):
+        target.add(n)
+        print(f"  + {n} → {m.upper()}")
+
+    print(f"Добавлено {count}. {m.upper()} = {Format(target)}")
+
+
+def AddManual():
+    m = ChooseSet()
+    if m is None:
+        return
+    target = SETS[m]
+
+    checks = Conditions()
+    print("Введите 'stop' для завершения ввода.")
+
+    added = 0
+
+    while True:
+        raw = input(f"Число {added + 1} (или 'stop'): ").strip().lower()
+        if raw == "stop":
+            break
+        try:
+            n = int(raw)
+        except ValueError:
+            print("  Некорректный ввод.")
+            continue
+
+        if n not in U:
+            print(f"  {n} не входит в U (-30..30).")
+            continue
+        if not Check(n, checks):
+            print(f"  {n} не подходит под условия.")
+            continue
+        if n in target:
+            print(f"  {n} уже есть в {m.upper()}.")
+            continue
+
+        target.add(n)
+        added += 1
+        print(f"  + {n} → {m.upper()}")
+    print(f"Добавлено {added}. {m.upper()} = {Format(target)}")
 
 def Del():
-    m = input("Из какого множества хотите удалить число? ").lower()
-    n = int(input("Введите число: "))
-    match m:
-        case "a":
-            if n in A:
-                A.remove(n)
-                print("число", n, "удалено из множества", m)
-            else:
-                print("числа", n, "нет в множестве", m)
-        case "b":
-            if n in B:
-                B.remove(n)
-                print("число", n, "удалено из множества", m)
-            else:
-                print("числа", n, "нет в множестве", m)
-        case "c":
-            if n in C:
-                C.remove(n)
-                print("число", n, "удалено из множества", m)
-            else:
-                print("числа", n, "нет в множестве", m)
-        case _:
-            print("Такого множества нет!")
-    Action()
+    m = ChooseSet()
+    if m is None:
+        return
+    try:
+        n = int(input("Введите число: "))
+    except ValueError:
+        print("Некорректно.")
+        return
+    if n in SETS[m]:
+        SETS[m].remove(n)
+        print(f"Число {n} удалено из {m.upper()}.")
+    else:
+        print(f"Числа {n} нет в {m.upper()}.")
 
-def Operations():
+def Clear():
+    m = ChooseSet()
+    if m is None:
+        return
+    SETS[m].clear()
+    print(f"Множество {m.upper()} очищено.")
+
+def ClearAll():
+    for s in SETS.values():
+        s.clear()
+    print("Все множества очищены.")
+
+def MenuActions():
     while True:
-        print("Выберите операцию:")
-        print("1 - Пересечение (A ∩ B)")
-        print("2 - Объединение (A ∪ B)")
-        print("3 - Разность (A \\ B)")
-        print("4 - Симметрическая разность (A △ B)")
-        print("5 - Дополнение (U \\ A)")
-        print("0 - Назад в главное меню")
+        print("--- Действия над множествами ---")
+        print("  1 - Добавить случайно")
+        print("  2 - Добавить вручную")
+        print("  3 - Удалить число")
+        print("  4 - Очистить множество")
+        print("  5 - Очистить все множества")
+        print("  0 - Назад")
 
-        op = input("Введите номер операции: ")
+        m = input("Ваш выбор: ").strip()
 
-        if op == "0":
-            Legenda()
-            return Action()
-        if op == "5":
-            m = input("Выберите множество (a, b, c): ").lower()
-            match m:
-                case "a": source = A
-                case "b": source = B
-                case "c": source = C
-                case _:
-                    print("Нет такого множества!")
-                    continue
-            result = set()
-            for x in U:
-                if x not in source:
-                    result.add(x)
-            print(f"Дополнение {m.upper()} = U \\ {m.upper()}:")
-            print(sorted(result))
-            print(f"Мощность: {len(result)}")
-            print("==========================")
-            continue
+        if m == "1": AddRand()
+        elif m == "2": AddManual()
+        elif m == "3": Del()
+        elif m == "4": Clear()
+        elif m == "5": ClearAll()
+        elif m == "0": return
+        else: print("Нет такого пункта.")
 
-        if op not in ("1", "2", "3", "4"):
-            print("Нет такой операции")
-            continue
-        m1 = input("Выберите первое множество: ").lower()
-        m2 = input("Выберите второе множество: ").lower()
-        match m1:
-            case "a": set1 = A
-            case "b": set1 = B
-            case "c": set1 = C
-            case _:
+
+# МЕНЮ 2: ВЫЧИСЛЕНИЕ
+
+def MenuCalc():
+    print("╔══════════════════════════════════════════════════════╗")
+    print("║                    ВЫЧИСЛЕНИЕ                        ║")
+    print("╠══════════════════════════════════════════════════════╣")
+    print("║  Введите любое выражение из множеств A, B, C.        ║")
+    print("║                                                      ║")
+    print("║  Операторы:                                          ║")
+    print("║    +     — объединение            (A + B = A ∪ B)    ║")
+    print("║    \\     — разность               (A \\ B)            ║")
+    print("║    &     — пересечение            (A & B = A ∩ B)    ║")
+    print("║    ^     — симметрическая разность (A ^ B = A △ B)   ║")
+    print("║    ~     — дополнение             (~A = U \\ A)       ║")
+    print("║                                                      ║")
+    print("║  Примеры:                                            ║")
+    print("║    A + (B & C)                                       ║")
+    print("║    (A \\ B) ^ C                                       ║")
+    print("║    ~A + (B & C)                                      ║")
+    print("║    (A + B) \\ (B & C)                                 ║")
+    print("║                                                      ║")
+    print("║  Приоритеты:  ~  >  &  >  (+, \\, ^)                  ║")
+    print("║  Введите 'back' или пустую строку — возврат.         ║")
+    print("╚══════════════════════════════════════════════════════╝")
+    print()
+
+    while True:
+        expr = input("Выражение: ").strip()
+        if expr.lower() in ("back", "0", ""):
+            return
+        try:
+            res, log = Evaluate(expr, trace=True)
+            if log:
+                print("Пошаговое вычисление:")
+                for line in log:
+                    print(line)
+            print(f"Результат: {Format(res)}")
+        except SyntaxError as e:
+            print(f"Ошибка разбора: {e}")
+        except Exception as e:
+            print(f"Ошибка: {e}")
+        print("-" * 45)
+
+
+# МЕНЮ 3: ПРОСМОТР
+
+def MenuView():
+    while True:
+        print("--- Просмотр множеств ---")
+        print("  1 - Одно множество")
+        print("  2 - Все множества")
+        print("  3 - Универсальное множество U")
+        print("  0 - Назад")
+
+        m = input("Ваш выбор: ").strip()
+
+        if m == "1":
+            name = input("Множество (a/b/c): ").strip().lower()
+            if name not in SETS:
                 print("Нет такого множества!")
                 continue
-        match m2:
-            case "a": set2 = A
-            case "b": set2 = B
-            case "c": set2 = C
-            case _:
-                print("Нет такого множества!")
-                continue
-
-        result = set()
-        if op == "1":
-            for x in set1:
-                if x in set2:
-                    result.add(x)
-            print(f"{m1.upper()} ∩ {m2.upper()} =", sorted(result))
-        elif op == "2":
-            for x in set1:
-                result.add(x)
-            for x in set2:
-                if x not in result:
-                    result.add(x)
-            print(f"{m1.upper()} ∪ {m2.upper()} =", sorted(result))
-        elif op == "3":
-            for x in set1:
-                if x not in set2:
-                    result.add(x)
-            print(f"{m1.upper()} \\ {m2.upper()} =", sorted(result))
-        elif op == "4":
-            for x in set1:
-                if x not in set2:
-                    result.add(x)
-            for x in set2:
-                if x not in set1:
-                    result.add(x)
-            print(f"{m1.upper()} △ {m2.upper()} =", sorted(result))
-        print("==========================")
+            print(f"{name.upper()} = {Format(SETS[name])}")
+        elif m == "2":
+            for name in ("a", "b", "c"):
+                print(f"  {name.upper()} = {Format(SETS[name])}")
+        elif m == "3":
+            print(f"  U = {Format(U)}")
+        elif m == "0":
+            return
+        else:
+            print("Нет такого пункта.")
 
 
-def Legenda():
-    print("================================================= \n"
-          "print - вывести числа из множества на экран \n"
-          "print_full - вывести все множества на экран \n"
-          "add - добавить n числ в множество вручную (U=(-30,30)) \n"
-          "rand - добавить случайное число в множество (U=(-30,30)) \n"
-          "rand_all - заполнить множество случайными числами  \n"
-          "rand_full - заполнить все множества случайными числами \n"
-          "del - удалить выбранное число из множества \n"
-          "clear - очистить выбранное множество \n"
-          "clear_all - очистить все множества \n"
-          "end - завершить работу программы \n"
-          "opers - операции над множествами \n" 
-          "=================================================")
-    Action()
+# ГЛАВНОЕ МЕНЮ
 
-Legenda()
+def MainMenu():
+    while True:
+        print()
+        print("╔════════════════════════════════╗")
+        print("║      КАЛЬКУЛЯТОР МНОЖЕСТВ      ║")
+        print("╠════════════════════════════════╣")
+        print("║  1 - Действия над множествами  ║")
+        print("║  2 - Вычисление                ║")
+        print("║  3 - Просмотр множеств         ║")
+        print("║  0 - Выход                     ║")
+        print("╚════════════════════════════════╝")
+
+        m = input("Ваш выбор: ").strip()
+
+        if m == "1":   MenuActions()
+        elif m == "2": MenuCalc()
+        elif m == "3": MenuView()
+        elif m == "0":
+            print("Завершение программы.")
+            return
+        else:
+            print("Нет такого пункта.")
+
+
+# ЗАПУСК
+
+MainMenu()
