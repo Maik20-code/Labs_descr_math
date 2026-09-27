@@ -5,7 +5,7 @@ from random import *
 A = set()
 B = set()
 C = set()
-U = set(range(-30, 31))          # универсальное множество
+U = set(range(-30, 31))    # универсальное множество
 SETS = {"a": A, "b": B, "c": C}  # доступ к множествам по имени (типо словаря)
 
 
@@ -73,7 +73,6 @@ SYMBOLS = {
     "/": "\\",
 }
 
-
 def Tokenize(expr):
     tokens = []
     for ch in expr:
@@ -97,17 +96,17 @@ def Tokenize(expr):
 #    factor -> "~" factor | atom
 #    atom -> "A" | "B" | "C" | "(" expr ")"
 
-def Peek(state):
+def Peek(state):  # посмотреть текущий токен
     pos = state["pos"]
     tok = state["tokens"]
     return tok[pos] if pos < len(tok) else None
 
-def Consume(state):
+def Consume(state):   # взять токен и сдвинуться вправо
     t = state["tokens"][state["pos"]]
     state["pos"] += 1
     return t
 
-def Record(state, op, left, right, res):
+def Record(state, op, left, right, res): # записать шаг в лог
     if not state["trace"]:
         return
     state["step"] += 1
@@ -117,7 +116,7 @@ def Record(state, op, left, right, res):
         f"  шаг {state['step']}: {l} {op} {r} → {Format(res)}"
     )
 
-def ParseAtom(state):
+def ParseAtom(state):   # атом: A, B, C или (…)
     tok = Peek(state)
     if tok is None:
         raise SyntaxError("Неожиданный конец выражения")
@@ -133,7 +132,7 @@ def ParseAtom(state):
         return inner
     raise SyntaxError(f"Неожиданный токен: '{tok}'")
 
-def ParseFactor(state):
+def ParseFactor(state):  # фактор: ~factor | atom
     if Peek(state) == "~":
         Consume(state)
         operand = ParseFactor(state)
@@ -142,7 +141,7 @@ def ParseFactor(state):
         return res
     return ParseAtom(state)
 
-def ParseTerm(state):
+def ParseTerm(state): # терм: factor (& factor)*
     left = ParseFactor(state)
     while Peek(state) == "&":
         Consume(state)
@@ -152,7 +151,7 @@ def ParseTerm(state):
         left = res
     return left
 
-def ParseExpr(state):
+def ParseExpr(state):  # выражение: term ((+ | \ | ^) term)*
     left = ParseTerm(state)
     while Peek(state) in ("+", "\\", "^"):
         op = Consume(state)
