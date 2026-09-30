@@ -5,7 +5,7 @@ from random import *
 A = set()
 B = set()
 C = set()
-U = set(range(-30, 31))    # универсальное множество
+U = set(range(-30, 31))          # универсальное множество
 SETS = {"a": A, "b": B, "c": C}  # доступ к множествам по имени (типо словаря)
 
 
@@ -73,6 +73,7 @@ SYMBOLS = {
     "/": "\\",
 }
 
+
 def Tokenize(expr):
     tokens = []
     for ch in expr:
@@ -96,27 +97,27 @@ def Tokenize(expr):
 #    factor -> "~" factor | atom
 #    atom -> "A" | "B" | "C" | "(" expr ")"
 
-def Peek(state):  # посмотреть текущий токен
+def Peek(state):
     pos = state["pos"]
     tok = state["tokens"]
     return tok[pos] if pos < len(tok) else None
 
-def Consume(state):   # взять токен и сдвинуться вправо
+def Consume(state):
     t = state["tokens"][state["pos"]]
     state["pos"] += 1
     return t
 
-def Record(state, op, left, right, res): # записать шаг в лог
+def Record(state, op, left, right, res):
     if not state["trace"]:
         return
     state["step"] += 1
     l = Format(left) if isinstance(left, set) else left
     r = Format(right) if isinstance(right, set) else right
     state["log"].append(
-        f"  шаг {state['step']}: {l} {op} {r} → {Format(res)}"
+        f"  шаг {state['step']}: {l} {op} {r} -> {Format(res)}"
     )
 
-def ParseAtom(state):   # атом: A, B, C или (…)
+def ParseAtom(state):
     tok = Peek(state)
     if tok is None:
         raise SyntaxError("Неожиданный конец выражения")
@@ -132,7 +133,7 @@ def ParseAtom(state):   # атом: A, B, C или (…)
         return inner
     raise SyntaxError(f"Неожиданный токен: '{tok}'")
 
-def ParseFactor(state):  # фактор: ~factor | atom
+def ParseFactor(state):
     if Peek(state) == "~":
         Consume(state)
         operand = ParseFactor(state)
@@ -141,7 +142,7 @@ def ParseFactor(state):  # фактор: ~factor | atom
         return res
     return ParseAtom(state)
 
-def ParseTerm(state): # терм: factor (& factor)*
+def ParseTerm(state):
     left = ParseFactor(state)
     while Peek(state) == "&":
         Consume(state)
@@ -151,7 +152,7 @@ def ParseTerm(state): # терм: factor (& factor)*
         left = res
     return left
 
-def ParseExpr(state):  # выражение: term ((+ | \ | ^) term)*
+def ParseExpr(state):
     left = ParseTerm(state)
     while Peek(state) in ("+", "\\", "^"):
         op = Consume(state)
@@ -305,7 +306,7 @@ def AddRand():
     count = min(count, len(free))
     for n in sample(free, count):
         target.add(n)
-        print(f"  + {n} → {m.upper()}")
+        print(f"  + {n} -> {m.upper()}")
 
     print(f"Добавлено {count}. {m.upper()} = {Format(target)}")
 
@@ -316,7 +317,6 @@ def AddManual():
         return
     target = SETS[m]
 
-    checks = Conditions()
     print("Введите 'stop' для завершения ввода.")
 
     added = 0
@@ -334,16 +334,13 @@ def AddManual():
         if n not in U:
             print(f"  {n} не входит в U (-30..30).")
             continue
-        if not Check(n, checks):
-            print(f"  {n} не подходит под условия.")
-            continue
         if n in target:
             print(f"  {n} уже есть в {m.upper()}.")
             continue
 
         target.add(n)
         added += 1
-        print(f"  + {n} → {m.upper()}")
+        print(f"  + {n} -> {m.upper()}")
     print(f"Добавлено {added}. {m.upper()} = {Format(target)}")
 
 def Del():
