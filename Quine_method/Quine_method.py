@@ -114,6 +114,8 @@ def Quine(v):
         used = [False] * len(current_level)
         next_level = []
         combined_any = False
+        if len(current_level)<2:
+            break
 
         print(f"Шаг {step}:")
         for i in range(len(current_level)):
@@ -237,9 +239,9 @@ def Quine(v):
 # ГЛАВНАЯ ПРОГРАММА
 
 def Main():
-    print("╔══════════════════════════════════════╗")
-    print("║  МИНИМИЗАЦИЯ ФУНКЦИЙ МЕТОДОМ КВАЙНА  ║")
-    print("╚══════════════════════════════════════╝")
+    print("╔══════════════════════════════════════════════╗")
+    print("║     МИНИМИЗАЦИЯ ФУНКЦИЙ МЕТОДОМ КВАЙНА       ║")
+    print("╚══════════════════════════════════════════════╝")
 
     v = ReadVector()
     if v is None:
